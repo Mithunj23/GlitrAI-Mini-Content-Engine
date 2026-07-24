@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>GlitrAI · Mini Content Engine</title>
+<link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="grid-bg"></div>
+
+  <header class="topbar">
+    <div class="wordmark">
+      <span class="dot"></span>
+      GLITR<span class="thin">AI</span>
+    </div>
+    <div class="subtitle">Mini Content Engine — product in, creative out</div>
+  </header>
+
+  <main class="layout">
+    <section class="panel intake">
+      <h2><span class="idx">01</span> Submit a product</h2>
+      <form id="generate-form">
+        <label>
+          Product name
+          <input type="text" name="productName" placeholder="Florentine Wooden Salad Bowl" required />
+        </label>
+        <label>
+          Short description
+          <textarea name="description" rows="4" placeholder="A match made in summer - salads and wooden bowls. Handpainted on mango wood..." required></textarea>
+        </label>
+        <label class="file-drop" id="file-drop">
+          Product reference image
+          <input type="file" name="image" id="image-input" accept="image/png, image/jpeg, image/webp" required />
+          <span class="file-drop__hint" id="file-hint">Click to choose an image, or drag one here</span>
+          <img id="preview" class="file-drop__preview" alt="preview" hidden />
+        </label>
+        <button type="submit" id="submit-btn">Generate creative →</button>
+        <p class="form-error" id="form-error" hidden></p>
+      </form>
+    </section>
+
+    <section class="panel queue">
+      <h2><span class="idx">02</span> Job queue <button class="refresh" id="refresh-btn" title="Refresh now">⟳</button></h2>
+      <div id="jobs-list" class="jobs-list">
+        <p class="empty-state">No jobs yet — submit a product on the left to kick off the pipeline.</p>
+      </div>
+    </section>
+
+    <section class="panel result">
+      <h2><span class="idx">03</span> Result</h2>
+      <div id="result-view" class="result-view">
+        <p class="empty-state">Select a job from the queue to inspect its prompt and output.</p>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    Backend: Node/Express · PostgreSQL · pluggable LLM + image-gen pipeline &nbsp;·&nbsp; GlitrAI SDE Intern Assignment
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
