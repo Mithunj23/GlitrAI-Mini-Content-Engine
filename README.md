@@ -1,5 +1,6 @@
 # GlitrAI Mini Content Engine
 URL-https://glitrai-mini-content-engine.onrender.com/
+
 GlitrAI Mini Content Engine is an AI-powered web application that automates the process of generating creative marketing content for products. Users can upload a product image along with its name and description, and the system generates an AI-enhanced prompt and a corresponding creative image.
 A simple AI-powered content generation application built for the GlitrAI SDE Intern Assignment.
 
