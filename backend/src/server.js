@@ -23,9 +23,10 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Static file serving for uploaded reference images and generated results
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
-app.use('/generated', express.static(path.join(__dirname, '..', 'generated')));
+// Note: images are no longer served as static files from local disk — the
+// container filesystem is ephemeral on Render/most PaaS free tiers (wiped on
+// every redeploy/restart). Images are stored in Postgres and streamed via
+// GET /api/jobs/:id/image/:kind instead (see routes/jobs.js).
 
 // Serve the minimal frontend
 app.use('/', express.static(path.join(__dirname, '..', '..', 'frontend')));
@@ -51,5 +52,5 @@ app.use((err, _req, res, _next) => {
 
 app.listen(PORT, () => {
   console.log(`[server] GlitrAI Mini Content Engine listening on port ${PORT}`);
-  console.log(`[server] Image generation mode: ${process.env.IMAGE_GEN_MODE || 'mock'}`);
+  console.log(`[server] Image generation mode: ${process.env.IMAGE_GEN_MODE || 'freeapi'}`);
 });

@@ -9,14 +9,14 @@
  * reference photo with the LLM-authored prompt text so the pipeline still
  * returns *something* meaningful rather than crashing the job. It is
  * intentionally the fallback, not the primary path: see imageService.js.
+ *
+ * Returns { buffer, mime } — image bytes only, never written to local disk.
+ * Local disk on Render (and most PaaS free tiers) is ephemeral and wiped on
+ * every redeploy/restart, so the caller (jobProcessor.js) persists these
+ * bytes into Postgres instead.
  */
 
-const fs = require('fs');
-const path = require('path');
 const sharp = require('sharp');
-
-const OUTPUT_DIR = path.join(__dirname, '..', '..', 'generated');
-fs.mkdirSync(OUTPUT_DIR, { recursive: true });
 
 const CANVAS_SIZE = 1024;
 
@@ -44,9 +44,7 @@ function wrapText(text, maxChars) {
   return lines;
 }
 
-async function generateImage({ jobId, prompt, productName, referenceImagePath }) {
-  const outputPath = path.join(OUTPUT_DIR, `${jobId}.png`);
-
+async function generateImage({ prompt, productName, referenceImageBuffer }) {
   // Base: the uploaded reference photo, cropped/resized to a square canvas.
   let base = sharp({
     create: {
@@ -57,8 +55,8 @@ async function generateImage({ jobId, prompt, productName, referenceImagePath })
     },
   });
 
-  if (referenceImagePath && fs.existsSync(referenceImagePath)) {
-    const photo = await sharp(referenceImagePath)
+  if (referenceImageBuffer) {
+    const photo = await sharp(referenceImageBuffer)
       .resize(CANVAS_SIZE, CANVAS_SIZE, { fit: 'cover' })
       .toBuffer();
     base = sharp(photo);
@@ -87,12 +85,12 @@ async function generateImage({ jobId, prompt, productName, referenceImagePath })
     <text x="48" y="${980}" font-family="Helvetica, Arial, sans-serif" font-size="16" fill="#c9c2b4">GlitrAI Mini Content Engine · mock render</text>
   </svg>`;
 
-  await base
+  const buffer = await base
     .composite([{ input: Buffer.from(overlaySvg), top: 0, left: 0 }])
     .png()
-    .toFile(outputPath);
+    .toBuffer();
 
-  return outputPath;
+  return { buffer, mime: 'image/png' };
 }
 
-module.exports = { generateImage, OUTPUT_DIR };
+module.exports = { generateImage };

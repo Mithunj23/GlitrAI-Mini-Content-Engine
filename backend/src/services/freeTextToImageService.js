@@ -13,18 +13,16 @@
  * pipeline (ComfyUI, Assignment 2) for actually preserving the product's
  * exact appearance in the new scene.
  *
+ * Returns { buffer, mime } — image bytes only, never written to local disk
+ * (Render's/most PaaS free tiers' filesystem is ephemeral; jobProcessor.js
+ * persists these bytes into Postgres instead).
+ *
  * If this call fails for any reason (offline, rate-limited, blocked network),
  * imageService.js automatically falls back to fallbackCompositeService.js so
  * a job never hard-fails just because a public demo endpoint had a bad day.
  * Every failure is logged with the actual status/body so it's diagnosable
  * from server logs instead of failing silently.
  */
-
-const fs = require('fs');
-const path = require('path');
-
-const OUTPUT_DIR = path.join(__dirname, '..', '..', 'generated');
-fs.mkdirSync(OUTPUT_DIR, { recursive: true });
 
 const ENDPOINT_BASE = 'https://image.pollinations.ai/prompt';
 const TIMEOUT_MS = 45000; // Pollinations can be slow under load; give it real headroom
@@ -47,8 +45,6 @@ async function attemptFetch(url) {
     const contentType = res.headers.get('content-type') || '';
 
     if (!res.ok) {
-      // Try to capture a snippet of the error body (often plain text/JSON)
-      // for real diagnostics instead of a bare status code.
       let bodySnippet = '';
       try {
         bodySnippet = (await res.text()).slice(0, 300);
@@ -72,15 +68,13 @@ async function attemptFetch(url) {
       );
     }
 
-    return Buffer.from(await res.arrayBuffer());
+    return { buffer: Buffer.from(await res.arrayBuffer()), mime: contentType };
   } finally {
     clearTimeout(timeout);
   }
 }
 
 async function generateImage({ jobId, prompt }) {
-  const outputPath = path.join(OUTPUT_DIR, `${jobId}.png`);
-
   // A numeric seed keeps repeated calls from silently reusing a cached image,
   // and lets two jobs with the same prompt still look distinct.
   const seed = Math.floor(Math.random() * 1_000_000);
@@ -91,12 +85,11 @@ async function generateImage({ jobId, prompt }) {
   let lastError;
   for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt += 1) {
     try {
-      const buffer = await attemptFetch(url);
-      fs.writeFileSync(outputPath, buffer);
+      const result = await attemptFetch(url);
       if (attempt > 1) {
         console.log(`[freeTextToImageService] Succeeded on retry attempt ${attempt} for job ${jobId}`);
       }
-      return outputPath;
+      return result;
     } catch (err) {
       lastError = err;
       console.error(

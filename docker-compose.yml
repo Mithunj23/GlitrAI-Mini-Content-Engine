@@ -34,11 +34,6 @@ services:
       PORT: 4000
     ports:
       - "4000:4000"
-    volumes:
-      - glitrai_uploads:/app/backend/src/uploads
-      - glitrai_generated:/app/backend/generated
 
 volumes:
   glitrai_pgdata:
-  glitrai_uploads:
-  glitrai_generated:

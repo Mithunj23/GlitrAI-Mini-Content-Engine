@@ -1,23 +1,19 @@
-const fs = require('fs');
-const path = require('path');
+/**
+ * Multer config for the product reference image upload.
+ *
+ * Uses memoryStorage (req.file.buffer) rather than diskStorage: the
+ * container's local filesystem is ephemeral on Render's (and most PaaS free
+ * tiers') infrastructure, so anything written to disk disappears on the next
+ * redeploy/restart. The buffer is persisted into Postgres instead — see
+ * routes/jobs.js and migrations/init.sql.
+ */
+
 const multer = require('multer');
-const { v4: uuidv4 } = require('uuid');
-
-const UPLOAD_DIR = path.join(__dirname, '..', 'uploads');
-fs.mkdirSync(UPLOAD_DIR, { recursive: true });
-
-const storage = multer.diskStorage({
-  destination: (_req, _file, cb) => cb(null, UPLOAD_DIR),
-  filename: (_req, file, cb) => {
-    const ext = path.extname(file.originalname).toLowerCase() || '.jpg';
-    cb(null, `${uuidv4()}${ext}`);
-  },
-});
 
 const ALLOWED_MIME = new Set(['image/jpeg', 'image/png', 'image/webp']);
 
 const upload = multer({
-  storage,
+  storage: multer.memoryStorage(),
   limits: { fileSize: 8 * 1024 * 1024 }, // 8MB
   fileFilter: (_req, file, cb) => {
     if (!ALLOWED_MIME.has(file.mimetype)) {
@@ -27,4 +23,4 @@ const upload = multer({
   },
 });
 
-module.exports = { upload, UPLOAD_DIR };
+module.exports = { upload };
